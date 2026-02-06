@@ -222,6 +222,233 @@ except Exception as e:
     print(f"[WARNING] Failed to load crop model: {e}")
     crop_model = None
 
+# Comprehensive Fertilizer Recommendations Database
+FERTILIZER_INFO = {
+    'rice': {
+        'primary_fertilizer': 'NPK 20-10-10',
+        'npk_ratio': '20-10-10',
+        'application_rate': '120-150 kg/hectare',
+        'timing': 'Apply at planting (30%), tillering stage (30%), and panicle initiation (40%)',
+        'organic_alternative': 'Compost (5-7 tons/hectare) + Green manure',
+        'micronutrients': 'Zinc sulfate (25 kg/ha) for better yield',
+        'notes': 'Rice requires high nitrogen. Split application is crucial for optimal growth.'
+    },
+    'maize': {
+        'primary_fertilizer': 'NPK 15-15-15',
+        'npk_ratio': '15-15-15',
+        'application_rate': '100-120 kg/hectare',
+        'timing': 'Apply at sowing (50%) and knee-high stage (50%)',
+        'organic_alternative': 'Farm yard manure (10 tons/hectare) + Vermicompost',
+        'micronutrients': 'Zinc (5 kg/ha) and Boron (1 kg/ha)',
+        'notes': 'Balanced NPK is essential. Side-dress nitrogen at V6 stage for best results.'
+    },
+    'chickpea': {
+        'primary_fertilizer': 'DAP (Diammonium Phosphate)',
+        'npk_ratio': '18-46-0',
+        'application_rate': '60-80 kg/hectare',
+        'timing': 'Apply full dose at sowing as basal application',
+        'organic_alternative': 'Rhizobium culture + Rock phosphate (200 kg/ha)',
+        'micronutrients': 'Sulfur (20 kg/ha) for better nodulation',
+        'notes': 'Being a legume, chickpea fixes nitrogen. Focus on phosphorus for root development.'
+    },
+    'kidneybeans': {
+        'primary_fertilizer': 'NPK 10-26-26',
+        'npk_ratio': '10-26-26',
+        'application_rate': '50-70 kg/hectare',
+        'timing': 'Apply at planting with additional side-dressing at flowering',
+        'organic_alternative': 'Compost (3-4 tons/hectare) + Rhizobium inoculation',
+        'micronutrients': 'Molybdenum for nitrogen fixation',
+        'notes': 'Low nitrogen requirement due to nitrogen fixation. Emphasize phosphorus and potassium.'
+    },
+    'pigeonpeas': {
+        'primary_fertilizer': 'SSP (Single Super Phosphate)',
+        'npk_ratio': '0-16-0',
+        'application_rate': '40-50 kg/hectare',
+        'timing': 'Apply at sowing time',
+        'organic_alternative': 'Farmyard manure (5 tons/hectare) + Rhizobium culture',
+        'micronutrients': 'Sulfur (15 kg/ha)',
+        'notes': 'Minimal fertilizer needed. Pigeon pea is drought-resistant and fixes nitrogen efficiently.'
+    },
+    'mothbeans': {
+        'primary_fertilizer': 'NPK 12-32-16',
+        'npk_ratio': '12-32-16',
+        'application_rate': '40-50 kg/hectare',
+        'timing': 'Apply full dose at sowing',
+        'organic_alternative': 'Vermicompost (2 tons/hectare)',
+        'micronutrients': 'Zinc and Iron for arid conditions',
+        'notes': 'Drought-tolerant crop. Minimal fertilizer requirement with focus on phosphorus.'
+    },
+    'mungbean': {
+        'primary_fertilizer': 'NPK 10-20-20',
+        'npk_ratio': '10-20-20',
+        'application_rate': '50-60 kg/hectare',
+        'timing': 'Apply at sowing with light top-dressing at flowering',
+        'organic_alternative': 'Compost (3 tons/hectare) + Rhizobium inoculation',
+        'micronutrients': 'Molybdenum and Boron',
+        'notes': 'Short-duration crop. Moderate fertilizer needs with emphasis on phosphorus.'
+    },
+    'blackgram': {
+        'primary_fertilizer': 'NPK 10-26-26',
+        'npk_ratio': '10-26-26',
+        'application_rate': '50-60 kg/hectare',
+        'timing': 'Apply at sowing time',
+        'organic_alternative': 'Farmyard manure (4 tons/hectare) + Biofertilizers',
+        'micronutrients': 'Sulfur (20 kg/ha) and Zinc (5 kg/ha)',
+        'notes': 'Leguminous crop with good nitrogen fixation. Focus on P and K for better yields.'
+    },
+    'lentil': {
+        'primary_fertilizer': 'DAP (Diammonium Phosphate)',
+        'npk_ratio': '18-46-0',
+        'application_rate': '50-60 kg/hectare',
+        'timing': 'Apply full dose at sowing',
+        'organic_alternative': 'Compost (3-4 tons/hectare) + Rhizobium culture',
+        'micronutrients': 'Sulfur (15 kg/ha) and Boron (1 kg/ha)',
+        'notes': 'Cool-season legume. Phosphorus is critical for root development and nodulation.'
+    },
+    'pomegranate': {
+        'primary_fertilizer': 'NPK 19-19-19',
+        'npk_ratio': '19-19-19',
+        'application_rate': '500-600 grams/plant/year',
+        'timing': 'Split into 4 doses: Feb, May, Aug, Nov',
+        'organic_alternative': 'Farmyard manure (20-25 kg/plant) + Neem cake',
+        'micronutrients': 'Zinc, Iron, and Boron sprays during flowering',
+        'notes': 'Fruit crop requiring balanced nutrition. Increase K during fruit development.'
+    },
+    'banana': {
+        'primary_fertilizer': 'NPK 10-6-40',
+        'npk_ratio': '10-6-40',
+        'application_rate': '200-300 grams/plant/month',
+        'timing': 'Monthly application for 9-10 months',
+        'organic_alternative': 'Farmyard manure (25 kg/plant) + Vermicompost',
+        'micronutrients': 'Magnesium and Calcium for quality fruits',
+        'notes': 'Heavy feeder requiring high potassium. Regular feeding essential for bunch development.'
+    },
+    'mango': {
+        'primary_fertilizer': 'NPK 10-10-20',
+        'npk_ratio': '10-10-20',
+        'application_rate': '1-1.5 kg/tree/year (mature trees)',
+        'timing': 'Apply in 2 splits: May-June and Sept-Oct',
+        'organic_alternative': 'Farmyard manure (50 kg/tree) + Bone meal',
+        'micronutrients': 'Zinc, Boron, and Iron sprays',
+        'notes': 'Increase potassium during fruit setting. Reduce nitrogen to avoid excessive vegetative growth.'
+    },
+    'grapes': {
+        'primary_fertilizer': 'NPK 19-19-19',
+        'npk_ratio': '19-19-19',
+        'application_rate': '400-500 grams/vine/year',
+        'timing': 'Apply in 3-4 splits during growing season',
+        'organic_alternative': 'Compost (10-15 kg/vine) + Seaweed extract',
+        'micronutrients': 'Zinc, Boron, and Magnesium',
+        'notes': 'Balanced nutrition critical. Adjust K during berry development for sweetness.'
+    },
+    'watermelon': {
+        'primary_fertilizer': 'NPK 12-12-17',
+        'npk_ratio': '12-12-17',
+        'application_rate': '80-100 kg/hectare',
+        'timing': 'Apply at planting (40%), vine growth (30%), and flowering (30%)',
+        'organic_alternative': 'Compost (8-10 tons/hectare) + Bone meal',
+        'micronutrients': 'Boron and Calcium for fruit quality',
+        'notes': 'High potassium needed for fruit sweetness. Avoid excess nitrogen to prevent vine growth.'
+    },
+    'muskmelon': {
+        'primary_fertilizer': 'NPK 13-13-21',
+        'npk_ratio': '13-13-21',
+        'application_rate': '80-100 kg/hectare',
+        'timing': 'Apply at planting, vine growth, and fruit development stages',
+        'organic_alternative': 'Farmyard manure (10 tons/hectare) + Vermicompost',
+        'micronutrients': 'Boron, Calcium, and Magnesium',
+        'notes': 'Similar to watermelon. High K for sweetness and shelf life.'
+    },
+    'apple': {
+        'primary_fertilizer': 'NPK 10-10-10',
+        'npk_ratio': '10-10-10',
+        'application_rate': '1-2 kg/tree/year (bearing trees)',
+        'timing': 'Apply in early spring and after fruit set',
+        'organic_alternative': 'Compost (30-40 kg/tree) + Bone meal',
+        'micronutrients': 'Calcium, Boron, and Zinc',
+        'notes': 'Balanced fertilization. Calcium critical for preventing bitter pit.'
+    },
+    'orange': {
+        'primary_fertilizer': 'NPK 8-3-9',
+        'npk_ratio': '8-3-9',
+        'application_rate': '1.5-2 kg/tree/year',
+        'timing': 'Apply in 3 splits: Feb, June, and Sept',
+        'organic_alternative': 'Farmyard manure (40-50 kg/tree) + Neem cake',
+        'micronutrients': 'Zinc, Iron, and Manganese sprays',
+        'notes': 'Citrus-specific fertilizer recommended. Regular micronutrient sprays prevent deficiencies.'
+    },
+    'papaya': {
+        'primary_fertilizer': 'NPK 12-12-12',
+        'npk_ratio': '12-12-12',
+        'application_rate': '200-250 grams/plant/month',
+        'timing': 'Monthly application starting 2 months after planting',
+        'organic_alternative': 'Vermicompost (5 kg/plant/month) + Neem cake',
+        'micronutrients': 'Boron and Zinc for fruit quality',
+        'notes': 'Fast-growing crop. Regular balanced feeding essential for continuous fruiting.'
+    },
+    'coconut': {
+        'primary_fertilizer': 'NPK 16-16-16',
+        'npk_ratio': '16-16-16',
+        'application_rate': '1.3 kg/palm/year (adult palms)',
+        'timing': 'Apply in 2 splits: May-June and Sept-Oct',
+        'organic_alternative': 'Farmyard manure (50 kg/palm) + Green manure',
+        'micronutrients': 'Boron (50g/palm) and Magnesium',
+        'notes': 'Add common salt (1 kg/palm) for coastal areas. Chloride improves nut quality.'
+    },
+    'cotton': {
+        'primary_fertilizer': 'NPK 17-17-17',
+        'npk_ratio': '17-17-17',
+        'application_rate': '100-125 kg/hectare',
+        'timing': 'Apply at sowing (50%) and square formation (50%)',
+        'organic_alternative': 'Farmyard manure (10 tons/hectare) + Neem cake',
+        'micronutrients': 'Zinc (25 kg/ha) and Boron (10 kg/ha)',
+        'notes': 'High nutrient demanding crop. Potassium critical for fiber quality and boll development.'
+    },
+    'jute': {
+        'primary_fertilizer': 'NPK 20-10-5',
+        'npk_ratio': '20-10-5',
+        'application_rate': '80-100 kg/hectare',
+        'timing': 'Apply at sowing (60%) and 30 days after sowing (40%)',
+        'organic_alternative': 'Compost (5 tons/hectare) + Green manure',
+        'micronutrients': 'Sulfur (20 kg/ha) for fiber quality',
+        'notes': 'High nitrogen requirement for fiber production. Adequate moisture essential.'
+    },
+    'coffee': {
+        'primary_fertilizer': 'NPK 10-10-20',
+        'npk_ratio': '10-10-20',
+        'application_rate': '300-400 grams/plant/year',
+        'timing': 'Apply in 3 splits: April, June, and September',
+        'organic_alternative': 'Compost (10-15 kg/plant) + Coffee pulp',
+        'micronutrients': 'Zinc, Boron, and Magnesium',
+        'notes': 'Shade-grown crop. Organic matter critical. High K for bean quality.'
+    }
+}
+
+def get_fertilizer_recommendation(crop_name):
+    """Get fertilizer recommendation for a specific crop"""
+    crop_key = crop_name.lower().strip()
+    
+    # Handle variations in crop names
+    crop_mapping = {
+        'kidney beans': 'kidneybeans',
+        'pigeon peas': 'pigeonpeas',
+        'moth beans': 'mothbeans',
+        'mung bean': 'mungbean',
+        'black gram': 'blackgram'
+    }
+    
+    crop_key = crop_mapping.get(crop_key, crop_key)
+    
+    return FERTILIZER_INFO.get(crop_key, {
+        'primary_fertilizer': 'NPK 10-10-10',
+        'npk_ratio': '10-10-10',
+        'application_rate': 'Consult local agricultural expert',
+        'timing': 'Apply based on crop growth stages',
+        'organic_alternative': 'Compost and farmyard manure',
+        'micronutrients': 'Based on soil test',
+        'notes': 'For specific recommendations, consult your local agricultural extension office.'
+    })
+
 
 def preprocess_image_for_ml(image_path):
     """Preprocess image for ML model prediction"""
@@ -553,11 +780,15 @@ def predict():
                     'confidence': round(p * 100, 1)
                 })
             
+            # Get fertilizer recommendation for the top crop
+            fertilizer = get_fertilizer_recommendation(crop)
+            
             return jsonify({
                 'crop': crop.title(),
                 'confidence': confidence,
                 'reason': reason,
-                'recommendations': recommendations
+                'recommendations': recommendations,
+                'fertilizer': fertilizer
             })
             
         else:
@@ -576,11 +807,15 @@ def predict():
             else:
                 crop, confidence, reason = 'Mixed Vegetables', 70, 'Your conditions are suitable for mixed vegetable cultivation with proper management.'
             
+            # Get fertilizer recommendation
+            fertilizer = get_fertilizer_recommendation(crop)
+            
             return jsonify({
                 'crop': crop, 
                 'confidence': confidence, 
                 'reason': reason,
-                'recommendations': [{'crop': crop, 'confidence': confidence}]
+                'recommendations': [{'crop': crop, 'confidence': confidence}],
+                'fertilizer': fertilizer
             })
     
     except Exception as e:
