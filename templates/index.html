@@ -83,13 +83,20 @@
                         </button>
                     </form>
 
-                    <div id="recommendation-result" class="mt-6 hidden bg-gradient-to-r from-gray-700 to-gray-800 text-white p-6 rounded-lg">
-                        <h2 class="text-2xl font-bold mb-3">Recommended Crop for Cultivation:</h2>
-                        <p class="text-xl mb-2">
-                            <span id="crop-name" class="font-semibold"></span> is the best crop to be cultivated
-                        </p>
-                        <p class="text-sm opacity-90 mb-2">Confidence: <span id="crop-confidence"></span>%</p>
-                        <p class="text-sm opacity-80" id="crop-reason"></p>
+                    <div id="recommendation-result" class="mt-6 hidden space-y-4">
+                        <div class="bg-gradient-to-r from-gray-700 to-gray-800 text-white p-6 rounded-lg text-center">
+                            <h2 class="text-2xl font-bold mb-3">Top Recommendation:</h2>
+                            <p class="text-3xl font-extrabold text-green-400 mb-2" id="crop-name"></p>
+                            <p class="text-sm opacity-90 mb-2">Confidence: <span id="crop-confidence"></span>%</p>
+                            <p class="text-sm opacity-80" id="crop-reason"></p>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow-lg">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Alternative Options:</h3>
+                            <div id="top-3-container" class="space-y-4">
+                                <!-- Top 3 bars will be injected here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -210,11 +217,39 @@
                 document.getElementById('crop-name').textContent = result.crop;
                 document.getElementById('crop-confidence').textContent = result.confidence;
                 document.getElementById('crop-reason').textContent = result.reason;
+                
+                if (result.recommendations) {
+                    renderTop3(result.recommendations);
+                }
+                
                 document.getElementById('recommendation-result').classList.remove('hidden');
             } catch (error) {
                 alert('Error getting recommendation: ' + error.message);
+            } finally {
+                // Restore button state if you had a loading state
             }
         });
+
+        function renderTop3(recommendations) {
+            const container = document.getElementById('top-3-container');
+            container.innerHTML = '';
+            
+            recommendations.forEach(item => {
+                const width = item.confidence;
+                const html = `
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-base font-medium text-gray-700 capitalize">${item.crop}</span>
+                            <span class="text-sm font-medium text-gray-500">${item.confidence}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-purple-600 h-2.5 rounded-full transition-all duration-1000" style="width: ${width}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
 
         // Camera functions
         async function openCamera() {

@@ -3,6 +3,8 @@ import os
 from werkzeug.utils import secure_filename
 from PIL import Image
 import numpy as np
+import pickle
+import pandas as pd
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -17,10 +19,10 @@ try:
     import tensorflow as tf
     from tensorflow import keras
     MODEL_AVAILABLE = True
-    print("✓ TensorFlow loaded successfully")
+    print("[OK] TensorFlow loaded successfully")
 except ImportError:
     MODEL_AVAILABLE = False
-    print("⚠ TensorFlow not available - using enhanced color-based classification")
+    print("[WARNING] TensorFlow not available - using enhanced color-based classification")
 
 # Comprehensive Disease Classes (PlantVillage dataset - 38 classes)
 DISEASE_CLASSES = [
@@ -188,20 +190,38 @@ def load_trained_model():
         model_path = 'models/plant_disease_model.h5'
         
         if os.path.exists(model_path):
-            print(f"📂 Loading model from {model_path}...")
+            print(f"[INFO] Loading model from {model_path}...")
             model = keras.models.load_model(model_path, compile=False)
             model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
             model_loaded = True
-            print("✓ Pre-trained model loaded successfully!")
+            print("[OK] Pre-trained model loaded successfully!")
             return model
         else:
-            print("⚠ No pre-trained model found. Using fallback classification.")
+            print("[WARNING] No pre-trained model found. Using fallback classification.")
             print(f"   To use ML model: place trained model at {model_path}")
             return None
             
     except Exception as e:
-        print(f"⚠ Error loading model: {e}")
+        print(f"[WARNING] Error loading model: {e}")
         return None
+
+# Load Crop Recommendation Model
+crop_model = None
+crop_le = None
+
+try:
+    with open('models/crop_recommendation_model.pkl', 'rb') as f:
+        crop_model = pickle.load(f)
+    print(f"[OK] Crop Recommendation Model loaded successfully! Type: {type(crop_model)}")
+    
+    with open('models/label_encoder.pkl', 'rb') as f:
+        crop_le = pickle.load(f)
+    print(f"[OK] Label Encoder loaded successfully! Classes: {len(crop_le.classes_)}")
+    
+except Exception as e:
+    print(f"[WARNING] Failed to load crop model: {e}")
+    crop_model = None
+
 
 def preprocess_image_for_ml(image_path):
     """Preprocess image for ML model prediction"""
@@ -280,30 +300,30 @@ def analyze_image_enhanced(image_path):
         # Check for tomato fruit (red/orange round fruit)
         if red_ratio > 0.15 or (orange_ratio > 0.2 and r_mean > 140):
             plant_type = "tomato"
-            print(f"  → Detected: TOMATO plant (red/orange fruit present)")
+            print(f"  -> Detected: TOMATO plant (red/orange fruit present)")
         
         # Check for corn/maize (elongated leaves, yellow-green, vertical patterns)
         elif green_ratio > 0.4 and yellow_ratio > 0.1 and r_mean < 140 and total_std < 60:
             plant_type = "corn"
-            print(f"  → Detected: CORN/MAIZE plant")
+            print(f"  -> Detected: CORN/MAIZE plant")
         
         # Check for potato (broader leaves, darker green)
         elif green_ratio > 0.5 and r_mean < 100 and brown_ratio > 0.1:
             plant_type = "potato"
-            print(f"  → Detected: POTATO plant")
+            print(f"  -> Detected: POTATO plant")
         
         # Check for apple/fruit trees (woody stems, round fruits)
         elif red_ratio > 0.1 and green_ratio > 0.3:
             plant_type = "apple"
-            print(f"  → Detected: APPLE/FRUIT tree")
+            print(f"  -> Detected: APPLE/FRUIT tree")
         
         # Default to tomato if red/orange dominant
         elif r_mean > 120 and r_mean > g_mean:
             plant_type = "tomato"
-            print(f"  → Detected: Likely TOMATO (red tones)")
+            print(f"  -> Detected: Likely TOMATO (red tones)")
         else:
             plant_type = "general"
-            print(f"  → Could not determine specific plant type")
+            print(f"  -> Could not determine specific plant type")
         
         # ========== STEP 2: IDENTIFY DISEASE BASED ON PLANT TYPE ==========
         
@@ -441,12 +461,12 @@ def analyze_image(image_path):
             
             predicted_class = DISEASE_CLASSES[top_idx]
             
-            print(f"✓ ML Prediction: {predicted_class} ({confidence:.2f}%)")
+            print(f"[OK] ML Prediction: {predicted_class} ({confidence:.2f}%)")
             
             return predicted_class, confidence
             
         except Exception as e:
-            print(f"⚠ ML prediction failed: {e}")
+            print(f"[WARNING] ML prediction failed: {e}")
             print("  Falling back to enhanced analysis...")
     
     # Fallback to enhanced color-based analysis
@@ -505,21 +525,63 @@ def predict():
         ph = float(data.get('pH', 0))
         rainfall = float(data.get('rainfall', 0))
         
-        # Enhanced rule-based recommendation
-        if rainfall > 150 and humidity > 70 and temperature > 20:
-            crop, confidence, reason = 'Rice', 88, 'High rainfall and humidity with warm temperatures are ideal for rice cultivation.'
-        elif temperature < 25 and rainfall < 100 and ph > 6:
-            crop, confidence, reason = 'Wheat', 85, 'Cool temperatures with moderate rainfall are suitable for wheat cultivation.'
-        elif temperature > 25 and rainfall > 100 and potassium > 40:
-            crop, confidence, reason = 'Cotton', 82, 'Warm climate with adequate rainfall and potassium levels favor cotton growth.'
-        elif temperature > 25 and rainfall > 150 and humidity > 70:
-            crop, confidence, reason = 'Coconut', 92, 'Based on your soil nutrient levels and climate conditions, coconut cultivation is highly suitable for this region.'
-        elif nitrogen > 80 and temperature > 20 and rainfall > 80:
-            crop, confidence, reason = 'Maize', 86, 'Good nitrogen levels with favorable temperature and rainfall support maize cultivation.'
+        if crop_model and crop_le:
+            # Prepare input array
+            input_data = np.array([[nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall]])
+            
+            # Get probabilities
+            probs = crop_model.predict_proba(input_data)[0]
+            
+            # Get top 3 predictions
+            top_3_idx = np.argsort(probs)[-3:][::-1]
+            top_3_crops = crop_le.inverse_transform(top_3_idx)
+            top_3_probs = probs[top_3_idx]
+            
+            # Main prediction
+            crop = top_3_crops[0]
+            confidence = round(top_3_probs[0] * 100, 2)
+            
+            # Create reason string
+            reason = f"Based on your conditions (N:{nitrogen}, P:{phosphorus}, K:{potassium}, Temp:{temperature}°C, Rain:{rainfall}mm), " \
+                     f"the model is {confidence}% confident that {crop} is the best choice."
+            
+            # Additional details for response
+            recommendations = []
+            for c, p in zip(top_3_crops, top_3_probs):
+                recommendations.append({
+                    'crop': c,
+                    'confidence': round(p * 100, 1)
+                })
+            
+            return jsonify({
+                'crop': crop.title(),
+                'confidence': confidence,
+                'reason': reason,
+                'recommendations': recommendations
+            })
+            
         else:
-            crop, confidence, reason = 'Mixed Vegetables', 70, 'Your conditions are suitable for mixed vegetable cultivation with proper management.'
-        
-        return jsonify({'crop': crop, 'confidence': confidence, 'reason': reason})
+            # Fallback to rule-based if model fails
+            print("[WARNING] Using fallback rule-based system")
+            if rainfall > 150 and humidity > 70 and temperature > 20:
+                crop, confidence, reason = 'Rice', 88, 'High rainfall and humidity with warm temperatures are ideal for rice cultivation.'
+            elif temperature < 25 and rainfall < 100 and ph > 6:
+                crop, confidence, reason = 'Wheat', 85, 'Cool temperatures with moderate rainfall are suitable for wheat cultivation.'
+            elif temperature > 25 and rainfall > 100 and potassium > 40:
+                crop, confidence, reason = 'Cotton', 82, 'Warm climate with adequate rainfall and potassium levels favor cotton growth.'
+            elif temperature > 25 and rainfall > 150 and humidity > 70:
+                crop, confidence, reason = 'Coconut', 92, 'Based on your soil nutrient levels and climate conditions, coconut cultivation is highly suitable for this region.'
+            elif nitrogen > 80 and temperature > 20 and rainfall > 80:
+                crop, confidence, reason = 'Maize', 86, 'Good nitrogen levels with favorable temperature and rainfall support maize cultivation.'
+            else:
+                crop, confidence, reason = 'Mixed Vegetables', 70, 'Your conditions are suitable for mixed vegetable cultivation with proper management.'
+            
+            return jsonify({
+                'crop': crop, 
+                'confidence': confidence, 
+                'reason': reason,
+                'recommendations': [{'crop': crop, 'confidence': confidence}]
+            })
     
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -580,14 +642,14 @@ if __name__ == '__main__':
     
     # Try to load ML model
     if MODEL_AVAILABLE:
-        print("\n📦 TensorFlow available")
+        print("\n[INFO] TensorFlow available")
         load_trained_model()
     else:
-        print("\n⚠ TensorFlow not available")
+        print("\n[WARNING] TensorFlow not available")
         print("  Using enhanced color-based disease detection")
     
     print("\n" + "="*60)
     print("Starting Flask server...")
     print("="*60 + "\n")
     
-app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000)
