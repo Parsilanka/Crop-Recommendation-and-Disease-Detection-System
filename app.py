@@ -172,6 +172,86 @@ DISEASE_INFO = {
         'severity': 'High',
         'treatment': 'Prune infected vines during dormancy. There is no curative treatment once symptoms appear.',
         'prevention': 'Use proper pruning techniques, protect pruning wounds, and maintain vine vigor through proper nutrition.'
+    },
+    'Rice_Blast': {
+        'severity': 'High',
+        'treatment': 'Apply tricyclazole or isoprothiolane. Keep standing water in the field 5-10 cm deep.',
+        'prevention': 'Use resistant varieties, avoid excess nitrogen fertilizer, and destroy infected straw/stubble.'
+    },
+    'Rice_Brown_Spot': {
+        'severity': 'Moderate',
+        'treatment': 'Apply fungicides like iprodione or propiconazole. Improve soil fertility with potash and organic manure.',
+        'prevention': 'Use certified disease-free seeds, treat seeds with fungicides, and practice hot water seed treatment.'
+    },
+    'Rice_Tungro': {
+        'severity': 'High',
+        'treatment': 'Control green leafhopper vectors with insecticides. Remove and destroy infected plants.',
+        'prevention': 'Plant resistant varieties, practice synchronous planting, and plow under infected stubble immediately after harvest.'
+    },
+    'Wheat_Rust': {
+        'severity': 'High',
+        'treatment': 'Apply fungicides like tebuconazole or propiconazole at first sign of infection.',
+        'prevention': 'Grow resistant varieties, remove volunteer wheat plants, and avoid late sowing.'
+    },
+    'Wheat_Septoria': {
+        'severity': 'Moderate',
+        'treatment': 'Apply azoxystrobin or chlorothalonil. Ensure good coverage of flag leaves.',
+        'prevention': 'Rotate crops, bury crop residue, and use clean seed.'
+    },
+    'Grape_Black_Rot': {
+        'severity': 'High',
+        'treatment': 'Apply fungicides (Mancozeb, Myclobutanil) from bud break through fruit set. Remove mummified berries.',
+        'prevention': 'Prune for air circulation, remove all infected fruit/canes during dormancy, and plant in sunny locations.'
+    },
+    'Tea_Blister_Blight': {
+        'severity': 'Moderate',
+        'treatment': 'Apply copper oxychloride or hexaconazole. Adjust plucking intervals to remove infected shoots.',
+        'prevention': 'Thin shade trees to reduce humidity, allow more sunlight, and avoid excessive nitrogen application.'
+    },
+    'Coffee_Rust': {
+        'severity': 'High',
+        'treatment': 'Apply copper-based fungicides or systemic fungicides like triadimefon. Prune to improve airflow.',
+        'prevention': 'Plant resistant varieties, ensure proper shade management, and maintain tree nutrition.'
+    },
+    'Cotton_Bacterial_Blight': {
+        'severity': 'Moderate',
+        'treatment': 'No chemical cure. Use copper sprays to reduce secondary spread. Remove infected debris.',
+        'prevention': 'Use acid-delinted seeds, resistant varieties, and practice crop rotation.'
+    },
+    'Sugarcane_Red_Rot': {
+        'severity': 'Critical',
+        'treatment': 'No effective chemical control. Dig out and burn entire clumps. Flood field to kill soil-borne inoculum.',
+        'prevention': 'Use healthy seed sets, follow 3-4 year crop rotation, and avoid ratooning of infected crops.'
+    },
+    'Sugarcane_Rust': {
+        'severity': 'Moderate',
+        'treatment': 'Apply mancozeb or propiconazole. Remove lower infected leaves.',
+        'prevention': 'Plant resistant varieties, avoid high nitrogen and humidity, and ensure good drainage.'
+    },
+    'Soybean_Rust': {
+        'severity': 'High',
+        'treatment': 'Apply fungicides like strobilurins or triazoles immediately upon detection.',
+        'prevention': 'Monitor sentinel plots, plant early maturing varieties, and manage wild hosts.'
+    },
+    'Tea_Red_Rust': {
+        'severity': 'Moderate',
+        'treatment': 'Apply copper fungicides or lime sulfur. Improve drainage and soil aeration.',
+        'prevention': 'Prune affected branches, maintain plant vigor with balanced fertilization, and control shade.'
+    },
+    'Coffee_Berry_Disease': {
+        'severity': 'High',
+        'treatment': 'Apply copper-based fungicides during flowering and berry development.',
+        'prevention': 'Plant resistant varieties like Ruiru 11, prune bushes to open canopy, and remove infected berries.'
+    },
+    'Cotton_Curl_Virus': {
+        'severity': 'High',
+        'treatment': 'Control whitefly vectors with systemic insecticides. Remove and destroy infected plants.',
+        'prevention': 'Use resistant varieties, manage weed hosts, and practice crop rotation.'
+    },
+    'Grape_Leaf_Blight': {
+        'severity': 'Moderate',
+        'treatment': 'Apply fungicides like mancozeb or captan. Remove infected leaves.',
+        'prevention': 'Improve air circulation by pruning, keep foliage dry, and remove overwintering debris.'
     }
 }
 
@@ -525,28 +605,61 @@ def analyze_image_enhanced(image_path):
         plant_type = "unknown"
         
         # Check for tomato fruit (red/orange round fruit)
-        if red_ratio > 0.15 or (orange_ratio > 0.2 and r_mean > 140):
+        if red_ratio > 0.2 and (orange_ratio > 0.2 and r_mean > 150):
             plant_type = "tomato"
             print(f"  -> Detected: TOMATO plant (red/orange fruit present)")
         
         # Check for corn/maize (elongated leaves, yellow-green, vertical patterns)
-        elif green_ratio > 0.4 and yellow_ratio > 0.1 and r_mean < 140 and total_std < 60:
+        elif green_ratio > 0.45 and yellow_ratio > 0.15 and r_mean < 140 and total_std < 55:
             plant_type = "corn"
             print(f"  -> Detected: CORN/MAIZE plant")
         
-        # Check for potato (broader leaves, darker green)
-        elif green_ratio > 0.5 and r_mean < 100 and brown_ratio > 0.1:
+        # Check for potato (broader leaves, darker green OR TUBER)
+        elif (green_ratio > 0.55 and r_mean < 90 and brown_ratio > 0.12) or (green_ratio < 0.15 and bright_ratio > 0.3 and total_std > 40):
             plant_type = "potato"
-            print(f"  -> Detected: POTATO plant")
+            print(f"  -> Detected: POTATO plant (leaves or tuber)")
         
         # Check for apple/fruit trees (woody stems, round fruits)
-        elif red_ratio > 0.1 and green_ratio > 0.3:
+        elif red_ratio > 0.15 and green_ratio > 0.35:
             plant_type = "apple"
             print(f"  -> Detected: APPLE/FRUIT tree")
         
-        # Default to tomato if red/orange dominant
-        elif r_mean > 120 and r_mean > g_mean:
-            plant_type = "tomato"
+        # Check for Cotton (White bolls, distinctive) - Check first as very distinct
+        elif bright_ratio > 0.1 and green_ratio > 0.3:
+            plant_type = "cotton"
+            print(f"  -> Detected: COTTON plant")
+            
+        # Check for Grape (Broad leaves, vine)
+        elif green_ratio > 0.5 and (dark_spots > 0.05 or brown_ratio > 0.05) and rg_ratio < 1.1:
+            plant_type = "grape"
+            print(f"  -> Detected: GRAPE vine")
+            
+        # Check for Tea/Coffee (Bushy, dark green leaves)
+        elif green_ratio > 0.6 and dark_ratio < 0.1 and r_mean < 100:
+            if brown_ratio > 0.05:
+                plant_type = "coffee"
+                print(f"  -> Detected: COFFEE plant")
+            else:
+                plant_type = "tea"
+                print(f"  -> Detected: TEA plant")
+        
+        # Check for Sugarcane (Tall grass, similar to corn)
+        elif green_ratio > 0.5 and r_mean < 120 and total_std < 45:
+            plant_type = "sugarcane"
+            print(f"  -> Detected: SUGARCANE plant")
+
+        # Check for Rice/Wheat (Vertical grass-like) - Check last as most generic
+        elif green_ratio > 0.4 and (yellow_ratio > 0.1 or brown_ratio > 0.1) and total_std < 50:
+            if yellow_ratio > 0.2:
+                plant_type = "wheat"
+                print(f"  -> Detected: WHEAT plant")
+            else:
+                plant_type = "rice"
+                print(f"  -> Detected: RICE plant")
+        
+        # REMOVED: Default to tomato logic which was too aggressive
+        # elif r_mean > 120 and r_mean > g_mean:
+        #     plant_type = "tomato"
             print(f"  -> Detected: Likely TOMATO (red tones)")
         else:
             plant_type = "general"
@@ -615,7 +728,14 @@ def analyze_image_enhanced(image_path):
         
         # POTATO DISEASES
         elif plant_type == "potato":
-            # Late blight
+            # Tuber Rot / Hollow Heart (Low Green)
+            if green_ratio < 0.2:
+                if bright_ratio > 0.3 or brown_ratio > 0.05 or dark_ratio > 0.05:
+                     return 'Potato___Late_blight', 90 # Mapping Rot/Hollow Heart to Late Blight
+                else:
+                     return 'Potato___healthy', 80
+
+            # Late blight (Leaves)
             if dark_ratio > 0.1 and brown_ratio > 0.15:
                 return 'Potato___Late_blight', 82
             
@@ -651,23 +771,115 @@ def analyze_image_enhanced(image_path):
             else:
                 return 'Apple___Apple_scab', 68
         
+        # RICE DISEASES
+        elif plant_type == "rice":
+            if brown_ratio > 0.15:
+                return 'Rice_Brown_Spot', 75
+            elif yellow_ratio > 0.2:
+                return 'Rice_Tungro', 78
+            elif total_std > 55:
+                return 'Rice_Blast', 72
+            else:
+                return 'Rice_Blast', 65
+
+        # WHEAT DISEASES
+        elif plant_type == "wheat":
+            if orange_ratio > 0.1 or yellow_ratio > 0.15:
+                return 'Wheat_Rust', 80
+            elif brown_ratio > 0.1:
+                return 'Wheat_Septoria', 75
+            else:
+                return 'Wheat_Rust', 70
+
+        # GRAPE DISEASES
+        elif plant_type == "grape":
+            if dark_ratio > 0.1:
+                return 'Grape_Black_Rot', 82
+            elif brown_ratio > 0.15:
+                return 'Esca', 75
+            elif yellow_ratio > 0.1:
+                return 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 72
+            else:
+                return 'Grape___healthy', 80
+
+        # TEA DISEASES
+        elif plant_type == "tea":
+            if white_spots := (bright_ratio > 0.05):
+                return 'Tea_Blister_Blight', 78
+            elif orange_ratio > 0.05:
+                return 'Tea_Red_Rust', 75  # Assuming we add info for Red Rust or map to existing
+            else:
+                return 'Tea_Blister_Blight', 65
+
+        # COFFEE DISEASES
+        elif plant_type == "coffee":
+            if orange_ratio > 0.1 or brown_ratio > 0.1:
+                return 'Coffee_Rust', 85
+            elif dark_ratio > 0.05:
+                return 'Coffee_Berry_Disease', 75 # Need to ensure info exists
+            else:
+                return 'Coffee_Rust', 70
+
+        # COTTON DISEASES
+        elif plant_type == "cotton":
+            if dark_ratio > 0.05:
+                return 'Cotton_Bacterial_Blight', 78
+            elif yellow_ratio > 0.15:
+                return 'Cotton_Curl_Virus', 75 # Need info
+            else:
+                return 'Cotton_Bacterial_Blight', 65
+
+        # SUGARCANE DISEASES
+        elif plant_type == "sugarcane":
+            if red_ratio > 0.1 or brown_ratio > 0.15:
+                return 'Sugarcane_Red_Rot', 80
+            elif orange_ratio > 0.05 or yellow_ratio > 0.1:
+                return 'Sugarcane_Rust', 75
+            else:
+                return 'Sugarcane_Red_Rot', 70
+        
+        # GENERAL CLASSIFICATION (when plant type unknown)
         # GENERAL CLASSIFICATION (when plant type unknown)
         else:
+            # Rust diseases (orange/reddish-brown pustules)
+            if (orange_ratio > 0.05 or (r_mean > 130 and g_mean < 120)) and total_std > 40:
+                print(f"  -> Detected: Rust pattern (orange/brown spots)")
+                return 'Corn_(maize)___Common_rust_', 75
+            
+            # Bacterial/Leaf Spots (small dark spots with yellow halos)
+            elif dark_ratio > 0.05 and yellow_ratio > 0.05 and total_std > 45:
+                print(f"  -> Detected: Bacterial/Leaf Spots")
+                return 'Tomato___Bacterial_spot', 72
+            
+            # Early Blight (concentric rings, brown spots)
+            elif brown_ratio > 0.12 and total_std > 50:
+                print(f"  -> Detected: Blight pattern")
+                return 'Potato___Early_blight', 74
+            
             # Powdery mildew (white powdery appearance)
-            if bright_ratio > 0.3 and r_mean > 180:
-                return 'Squash___Powdery_mildew', 73
+            elif bright_ratio > 0.25 and r_mean > 160 and g_mean > 160:
+                print(f"  -> Detected: Powdery Mildew")
+                return 'Squash___Powdery_mildew', 78
             
-            # Late blight (dark lesions)
+            # Late blight (large dark lesions)
             elif dark_ratio > 0.15 and brown_ratio > 0.1:
-                return 'Tomato___Late_blight', 75
+                print(f"  -> Detected: Severe Blight/Rot")
+                return 'Tomato___Late_blight', 80
             
-            # Healthy green
-            elif green_ratio > 0.6 and dark_ratio < 0.02:
-                return 'Tomato___healthy', 80
+            # Yellowing/Chlorosis (virus or deficiency)
+            elif yellow_ratio > 0.25 and green_ratio < 0.4:
+                print(f"  -> Detected: Yellowing/Chlorosis")
+                return 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 70
             
-            # Default
+            # Healthy green (dominant green, low spots)
+            elif green_ratio > 0.55 and dark_ratio < 0.03 and brown_ratio < 0.05:
+                print(f"  -> Detected: Healthy plant")
+                return 'Soybean___healthy', 85
+            
+            # Default fallback for ambiguous cases
             else:
-                return 'Tomato___Bacterial_spot', 65
+                print(f"  -> Ambiguous pattern, defaulting to general leaf spot")
+                return 'Tomato___Septoria_leaf_spot', 60
             
     except Exception as e:
         print(f"Error in enhanced analysis: {e}")
