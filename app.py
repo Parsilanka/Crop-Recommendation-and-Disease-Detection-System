@@ -5,6 +5,10 @@ from PIL import Image
 import numpy as np
 import pickle
 import pandas as pd
+import history
+import pdf_generator
+import weather
+  # Import our new history module
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -268,14 +272,22 @@ def load_trained_model():
     
     try:
         model_path = 'models/plant_disease_model.h5'
+        saved_model_dir = 'models/plant_disease_model'
         
         if os.path.exists(model_path):
             print(f"[INFO] Loading model from {model_path}...")
             model = keras.models.load_model(model_path, compile=False)
-            model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
             model_loaded = True
-            print("[OK] Pre-trained model loaded successfully!")
+            print("[OK] Pre-trained model (H5) loaded successfully!")
             return model
+            
+        elif os.path.exists(saved_model_dir):
+            print(f"[INFO] Loading SavedModel from {saved_model_dir}...")
+            model = keras.models.load_model(saved_model_dir, compile=False)
+            model_loaded = True
+            print("[OK] Pre-trained model (SavedModel) loaded successfully!")
+            return model
+            
         else:
             print("[WARNING] No pre-trained model found. Using fallback classification.")
             print(f"   To use ML model: place trained model at {model_path}")
@@ -609,28 +621,42 @@ def analyze_image_enhanced(image_path):
             plant_type = "tomato"
             print(f"  -> Detected: TOMATO plant (red/orange fruit present)")
         
-        # Check for corn/maize (elongated leaves, yellow-green, vertical patterns)
-        elif green_ratio > 0.45 and yellow_ratio > 0.15 and r_mean < 140 and total_std < 55:
-            plant_type = "corn"
-            print(f"  -> Detected: CORN/MAIZE plant")
-        
-        # Check for potato (broader leaves, darker green OR TUBER)
-        elif (green_ratio > 0.55 and r_mean < 90 and brown_ratio > 0.12) or (green_ratio < 0.15 and bright_ratio > 0.3 and total_std > 40):
-            plant_type = "potato"
-            print(f"  -> Detected: POTATO plant (leaves or tuber)")
-        
         # Check for apple/fruit trees (woody stems, round fruits)
         elif red_ratio > 0.15 and green_ratio > 0.35:
             plant_type = "apple"
             print(f"  -> Detected: APPLE/FRUIT tree")
         
-        # Check for Cotton (White bolls, distinctive) - Check first as very distinct
+        # Check for Cotton (White bolls, distinctive)
         elif bright_ratio > 0.1 and green_ratio > 0.3:
             plant_type = "cotton"
             print(f"  -> Detected: COTTON plant")
+
+        # Check for corn/maize (elongated leaves, yellow-green, vertical patterns)
+        elif green_ratio > 0.45 and yellow_ratio > 0.1 and r_mean < 140 and total_std < 60:
+            plant_type = "corn"
+            print(f"  -> Detected: CORN/MAIZE plant")
+
+        # Check for Rice/Wheat (Vertical grass-like, high variability due to thin leaves)
+        elif green_ratio > 0.35 and (yellow_ratio > 0.05 or brown_ratio > 0.05 or dark_ratio > 0.05) and total_std < 65:
+            if yellow_ratio > 0.15:
+                plant_type = "wheat"
+                print(f"  -> Detected: WHEAT plant")
+            else:
+                plant_type = "rice"
+                print(f"  -> Detected: RICE plant")
+        
+        # Check for Sugarcane (Tall grass)
+        elif green_ratio > 0.5 and r_mean < 120 and total_std < 50:
+            plant_type = "sugarcane"
+            print(f"  -> Detected: SUGARCANE plant")
+
+        # Check for potato (broader leaves, darker green OR TUBER)
+        elif (green_ratio > 0.55 and r_mean < 90 and brown_ratio > 0.12) or (green_ratio < 0.15 and bright_ratio > 0.3 and total_std > 40):
+            plant_type = "potato"
+            print(f"  -> Detected: POTATO plant (leaves or tuber)")
             
-        # Check for Grape (Broad leaves, vine)
-        elif green_ratio > 0.5 and (dark_spots > 0.05 or brown_ratio > 0.05) and rg_ratio < 1.1:
+        # Check for Grape (Broad leaves, vine) - Fixed dark_ratio bug
+        elif green_ratio > 0.5 and (dark_ratio > 0.05 or brown_ratio > 0.05) and rg_ratio < 1.1:
             plant_type = "grape"
             print(f"  -> Detected: GRAPE vine")
             
@@ -643,27 +669,11 @@ def analyze_image_enhanced(image_path):
                 plant_type = "tea"
                 print(f"  -> Detected: TEA plant")
         
-        # Check for Sugarcane (Tall grass, similar to corn)
-        elif green_ratio > 0.5 and r_mean < 120 and total_std < 45:
-            plant_type = "sugarcane"
-            print(f"  -> Detected: SUGARCANE plant")
-
-        # Check for Rice/Wheat (Vertical grass-like) - Check last as most generic
-        elif green_ratio > 0.4 and (yellow_ratio > 0.1 or brown_ratio > 0.1) and total_std < 50:
-            if yellow_ratio > 0.2:
-                plant_type = "wheat"
-                print(f"  -> Detected: WHEAT plant")
-            else:
-                plant_type = "rice"
-                print(f"  -> Detected: RICE plant")
-        
-        # REMOVED: Default to tomato logic which was too aggressive
-        # elif r_mean > 120 and r_mean > g_mean:
-        #     plant_type = "tomato"
-            print(f"  -> Detected: Likely TOMATO (red tones)")
         else:
             plant_type = "general"
             print(f"  -> Could not determine specific plant type")
+        
+        print(f"Final plant type determination: {plant_type}")
         
         # ========== STEP 2: IDENTIFY DISEASE BASED ON PLANT TYPE ==========
         
@@ -900,6 +910,11 @@ def analyze_image(image_path):
             
             predicted_class = DISEASE_CLASSES[top_idx]
             
+            # If confidence is too low (e.g. dummy model guessing), fallback to color analysis
+            if confidence < 50:
+                print(f"[WARNING] ML Confidence too low ({confidence:.2f}%). Falling back to enhanced analysis.")
+                return analyze_image_enhanced(image_path)
+            
             print(f"[OK] ML Prediction: {predicted_class} ({confidence:.2f}%)")
             
             return predicted_class, confidence
@@ -950,6 +965,12 @@ def allowed_file(filename):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/history')
+def history_page():
+    """View analysis history"""
+    entries = history.get_history()
+    return render_template('history.html', entries=entries)
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -1047,15 +1068,22 @@ def classify_disease():
         
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
+            upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
             
-            print(f"\n{'='*60}")
-            print(f"Analyzing: {filename}")
-            print(f"{'='*60}")
+            # Ensure upload folder exists
+            if not os.path.exists(upload_folder):
+                os.makedirs(upload_folder)
+                
+            filepath = os.path.join(upload_folder, filename)
+            # Use absolute path to avoid [Errno 22] on Windows
+            abs_filepath = os.path.abspath(filepath)
+            
+            file.save(abs_filepath)
+            print(f"[INFO] Image saved to {abs_filepath}")
             
             # Analyze image
-            predicted_class, confidence = analyze_image(filepath)
+            predicted_class, confidence = analyze_image(abs_filepath)
+            print(f"[INFO] Classification result: {predicted_class} ({confidence}%)")
             
             # Format disease name
             disease_name = format_disease_name(predicted_class)
@@ -1071,8 +1099,13 @@ def classify_disease():
                 'prevention': disease_data['prevention']
             }
             
+            print(f"[DEBUG] Final result dict: {result}")
             print(f"\nResult: {disease_name} ({confidence:.2f}%)")
             print(f"{'='*60}\n")
+            
+
+            # Save to history
+            history.add_entry(filename, disease_name, confidence)
             
             return jsonify(result)
         
@@ -1082,10 +1115,63 @@ def classify_disease():
         print(f"Error in classify_disease: {e}")
         return jsonify({'error': str(e)}), 400
 
+import sqlite3
+from flask import send_file
+
+@app.route('/download_report/<int:report_id>')
+def download_report(report_id):
+    """Generate and download PDF report"""
+    try:
+        # Get entry from history
+        conn = sqlite3.connect(history.DB_NAME)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute('SELECT * FROM history WHERE id = ?', (report_id,))
+        entry = c.fetchone()
+        conn.close()
+        
+        if not entry:
+            return "Report not found", 404
+            
+        # Get details
+        disease_info = get_disease_info(entry['prediction'])
+        
+        # Generate PDF
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], entry['filename'])
+        # Ensure absolute path
+        image_path = os.path.abspath(image_path)
+        
+        print(f"Generating PDF for {image_path}")
+        
+        report_file, report_path = pdf_generator.generate_report(
+            image_path, 
+            entry['prediction'], 
+            entry['confidence'], 
+            disease_info
+        )
+        
+        return send_file(report_path, as_attachment=True, download_name=report_file)
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        return str(e), 500
+
+@app.route('/weather_data')
+def weather_data():
+    """Get weather data"""
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    
+    data = weather.get_weather(lat, lon)
+    if data:
+        data['desc'] = weather.get_weather_desc(data['weathercode'])
+        return jsonify(data)
+    return jsonify({'error': 'Could not fetch weather'}), 500
+
 if __name__ == '__main__':
     print("\n" + "="*60)
     print("CROP RECOMMENDATION & DISEASE DETECTION SYSTEM")
     print("="*60)
+    
     
     # Try to load ML model
     if MODEL_AVAILABLE:

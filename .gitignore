@@ -55,3 +55,15 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Temporary Debug Scripts
+reproduce_*.py
+debug_*.py
+verify_*.py
+check_db_id.py
+create_dummy_model.py
+diagnostic_*.py
+download_*.py
+inspect_model.py
+test_*.py
+try_*.py

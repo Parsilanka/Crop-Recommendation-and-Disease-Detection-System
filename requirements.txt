@@ -2,3 +2,7 @@ flask==3.0.3
 numpy==2.1.0
 pandas==2.2.3
 scikit-learn==1.5.2
+fpdf2==2.7.9
+requests==2.32.3
+tensorflow
+kagglehub

@@ -42,16 +42,38 @@
                     <span class="ml-3 text-5xl">🌱</span>
                 </div>
 
+                <!-- Weather Widget -->
+                <div id="weather-widget"
+                    class="bg-blue-100 rounded-lg p-4 mb-6 flex items-center justify-between hidden">
+                    <div class="flex items-center">
+                        <span class="text-3xl mr-3">🌤️</span>
+                        <div>
+                            <p class="font-bold text-blue-800">Local Weather (Nairobi)</p>
+                            <p id="weather-desc" class="text-sm text-blue-600">Loading...</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p id="weather-temp" class="text-2xl font-bold text-blue-800">--°C</p>
+                        <p id="weather-wind" class="text-xs text-blue-600">Wind: -- km/h</p>
+                    </div>
+                </div>
+
                 <!-- Tab Navigation -->
-                <div class="flex gap-4 mb-8 border-b border-gray-200">
-                    <button onclick="switchTab('recommendation')" id="tab-recommendation"
-                        class="tab-active pb-3 px-6 font-semibold transition-colors">
-                        Crop Recommendation
-                    </button>
-                    <button onclick="switchTab('disease')" id="tab-disease"
-                        class="tab-inactive pb-3 px-6 font-semibold transition-colors">
-                        Disease Classification
-                    </button>
+                <div class="flex gap-4 mb-8 border-b border-gray-200 justify-between">
+                    <div class="flex gap-4">
+                        <button onclick="switchTab('recommendation')" id="tab-recommendation"
+                            class="tab-active pb-3 px-6 font-semibold transition-colors">
+                            Crop Recommendation
+                        </button>
+                        <button onclick="switchTab('disease')" id="tab-disease"
+                            class="tab-inactive pb-3 px-6 font-semibold transition-colors">
+                            Disease Classification
+                        </button>
+                    </div>
+                    <a href="/history"
+                        class="text-blue-600 hover:text-blue-800 font-semibold py-3 px-4 flex items-center gap-2">
+                        <span>📜</span> History
+                    </a>
                 </div>
 
                 <!-- Crop Recommendation Tab -->
@@ -252,6 +274,64 @@
     </div>
 
     <script>
+        // Fetch Weather Data with Geolocation
+        document.addEventListener('DOMContentLoaded', () => {
+            const weatherWidget = document.getElementById('weather-widget');
+            const weatherDesc = document.getElementById('weather-desc');
+            const weatherTemp = document.getElementById('weather-temp');
+            const weatherWind = document.getElementById('weather-wind');
+            const weatherTitle = weatherWidget.querySelector('p.font-bold');
+
+            function fetchWeather(lat = null, lon = null) {
+                let url = '/weather_data';
+                if (lat && lon) {
+                    url += `?lat=${lat}&lon=${lon}`;
+                    weatherTitle.textContent = "Local Weather";
+                }
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.temperature) {
+                            weatherWidget.classList.remove('hidden');
+                            weatherTemp.textContent = `${data.temperature}°C`;
+                            weatherDesc.textContent = data.desc;
+                            weatherWind.textContent = `Wind: ${data.windspeed} km/h`;
+
+                            if (data.location) {
+                                weatherTitle.textContent = data.location;
+                            } else {
+                                weatherTitle.textContent = "Local Weather";
+                            }
+                        }
+                    })
+                    .catch(error => console.log('Error fetching weather:', error));
+            }
+
+            // Try to get user location
+            if (navigator.geolocation) {
+                weatherDesc.textContent = "Locating...";
+                weatherWidget.classList.remove('hidden');
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        fetchWeather(lat, lon);
+                    },
+                    (error) => {
+                        console.log("Geolocation error:", error);
+                        weatherDesc.textContent = "Loading default...";
+                        // Fallback to default (Nairobi)
+                        fetchWeather();
+                    }
+                );
+            } else {
+                // Browser doesn't support geolocation
+                fetchWeather();
+            }
+        });
+
         let cameraStream = null;
         let currentImageBlob = null;
 
@@ -419,6 +499,10 @@
                 });
 
                 const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || `Server returned ${response.status}`);
+                }
 
                 document.getElementById('disease-name').textContent = result.disease;
                 document.getElementById('disease-confidence').textContent = result.confidence;

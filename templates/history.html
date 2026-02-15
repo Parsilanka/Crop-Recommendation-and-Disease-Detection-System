@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis History - Crop Doctor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2ecc71;
+            --secondary: #27ae60;
+            --accent: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--secondary);
+            margin: 0;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: var(--secondary);
+            color: white;
+            font-weight: 500;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .confidence-high {
+            color: var(--secondary);
+            font-weight: bold;
+        }
+
+        .confidence-low {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .img-preview {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container header-content">
+            <h1>Analysis History</h1>
+            <a href="/" class="btn">Back to Home</a>
+        </div>
+    </header>
+
+    <div class="container">
+        {% if entries %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Image</th>
+                    <th>Diagnosis</th>
+                    <th>Confidence</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td class="timestamp">{{ entry.date }}</td>
+                    <td><img src="/uploads/{{ entry.filename }}" alt="Crop" class="img-preview"></td>
+                    <td>{{ entry.prediction }}</td>
+                    <td>
+                        <span class="{{ 'confidence-high' if entry.confidence > 70 else 'confidence-low' }}">
+                            {{ entry.confidence }}%
+                        </span>
+                    </td>
+                    <td>
+                        <a href="/download_report/{{ entry.id }}" class="btn"
+                            style="font-size: 0.8em; padding: 5px 10px;">
+                            📄 Download PDF
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align: center; padding: 50px;">
+            <h3>No history found yet.</h3>
+            <p>Go back and analyze some crops!</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+
+</html>
