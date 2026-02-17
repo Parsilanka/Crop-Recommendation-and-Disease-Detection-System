@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - Crop Doctor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-purple-600 font-[Inter]">
+    <div class="p-6">
+        <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-white border-b border-gray-100 p-8 shadow-sm">
+                <div class="text-center mb-8">
+                    <h1 class="text-4xl font-black text-gray-800 inline-flex items-center gap-3">
+                        <span class="text-5xl">📅</span> My Consultations
+                    </h1>
+                </div>
+
+                <nav class="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-gray-50">
+                    <div class="flex gap-4">
+                        <a href="/"
+                            class="px-5 py-2 rounded-xl text-gray-600 hover:text-purple-600 font-bold transition-all hover:bg-purple-50">Home</a>
+                        <a href="/experts"
+                            class="px-5 py-2 rounded-xl text-gray-600 hover:text-purple-600 font-bold transition-all hover:bg-purple-50">Find
+                            Experts</a>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        {% if current_user.is_authenticated %}
+                        <span class="text-sm font-semibold text-gray-400">Welcome, <span
+                                class="text-gray-900 capitalize">{{ current_user.username }}</span></span>
+                        <a href="/logout"
+                            class="bg-red-50 text-red-600 px-5 py-2 rounded-xl font-bold hover:bg-red-100 transition-all">Logout</a>
+                        {% else %}
+                        <a href="/login"
+                            class="bg-purple-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-purple-700 transition-all shadow-md">Login</a>
+                        {% endif %}
+                    </div>
+                </nav>
+            </div>
+
+            <div class="p-8">
+                <div id="bookings-container" class="space-y-6">
+                    <!-- Loading state -->
+                    <div class="animate-pulse space-y-4">
+                        <div class="h-24 bg-gray-100 rounded-2xl"></div>
+                        <div class="h-24 bg-gray-100 rounded-2xl"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadBookings() {
+            try {
+                const response = await fetch('/api/experts/bookings');
+                const data = await response.json();
+                const container = document.getElementById('bookings-container');
+
+                if (!data.bookings || data.bookings.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                            <span class="text-6xl mb-4 block">🏜️</span>
+                            <h3 class="text-2xl font-bold text-gray-800 mb-2">No bookings found</h3>
+                            <p class="text-gray-500 mb-8">You haven't scheduled any consultations yet.</p>
+                            <a href="/experts" class="bg-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-purple-700 transition-all">
+                                Browse Experts
+                            </a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.bookings.map(b => `
+                    <div class="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div class="flex items-center gap-6">
+                            <div class="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center text-3xl">👨‍🔬</div>
+                            <div>
+                                <h3 class="font-extrabold text-gray-900 text-lg">${b.expert.user.full_name || b.expert.user.username}</h3>
+                                <p class="text-purple-600 font-semibold text-sm mb-1">${b.expert.specializations.join(', ')}</p>
+                                <div class="flex gap-4 text-xs font-bold text-gray-400">
+                                    <span class="flex items-center gap-1">🕒 ${b.booking_date} at ${b.start_time}</span>
+                                    <span class="flex items-center gap-1 capitalize">💻 ${b.mode}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4 w-full md:w-auto">
+                            <div class="flex-1 md:flex-none text-right">
+                                <span class="px-4 py-1.5 rounded-full text-xs font-extra-bold uppercase tracking-wider 
+                                    ${b.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                        b.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}">
+                                    ${b.status}
+                                </span>
+                            </div>
+                            <button onclick="viewBooking(${b.id})" 
+                                class="px-6 py-2 border-2 border-purple-50 hover:bg-purple-50 text-purple-600 font-bold rounded-xl transition-all">
+                                Details
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('bookings-container').innerHTML = `
+                    <div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl border border-red-100">
+                        Failed to load bookings. Please ensure you are logged in.
+                    </div>
+                `;
+            }
+        }
+
+        function viewBooking(id) {
+            alert('Consultation details and session link will be available here when confirmed.');
+        }
+
+        loadBookings();
+    </script>
+</body>
+
+</html>

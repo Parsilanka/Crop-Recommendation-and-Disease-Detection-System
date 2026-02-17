@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Forum - Crop Doctor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #2D6A4F, #40916C);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar h1 {
+            font-size: 24px;
+        }
+
+        .navbar nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            font-weight: 500;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-create {
+            background: linear-gradient(135deg, #2D6A4F, #40916C);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .category-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid #2D6A4F;
+        }
+
+        .category-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-card .icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .category-card .name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .category-card .count {
+            color: #6C757D;
+            font-size: 14px;
+        }
+
+        .posts-list {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .post-card {
+            padding: 20px;
+            border-bottom: 1px solid #DEE2E6;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .post-card:hover {
+            background: #F8F9FA;
+        }
+
+        .post-card:last-child {
+            border-bottom: none;
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .post-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .post-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #212529;
+        }
+
+        .post-excerpt {
+            color: #6C757D;
+            margin-bottom: 12px;
+        }
+
+        .post-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: #6C757D;
+        }
+
+        .badge {
+            background: #2D6A4F;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-purple-600">
+    <div class="p-6">
+        <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-8 border-b border-gray-100 bg-white">
+                <div class="text-center mb-8">
+                    <h1 class="text-4xl font-black text-gray-800 inline-flex items-center gap-3">
+                        <span class="text-5xl">🌾</span> Crop Doctor Forum
+                    </h1>
+                </div>
+
+                <nav class="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-gray-50">
+                    <div class="flex gap-4">
+                        <a href="/"
+                            class="px-5 py-2 rounded-xl text-gray-600 hover:text-purple-600 font-bold transition-all hover:bg-purple-50">Home</a>
+                        <a href="/forum"
+                            class="px-5 py-2 rounded-xl bg-purple-600 text-white font-black shadow-md">Forum</a>
+                        <a href="/experts"
+                            class="px-5 py-2 rounded-xl text-gray-600 hover:text-purple-600 font-bold transition-all hover:bg-purple-50">Experts</a>
+                        <a href="/my-bookings"
+                            class="px-5 py-2 rounded-xl text-gray-600 hover:text-purple-600 font-bold transition-all hover:bg-purple-50">My
+                            Bookings</a>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        {% if current_user.is_authenticated %}
+                        <span class="text-sm font-semibold text-gray-400">Signed in as <span
+                                class="text-gray-900 capitalize">{{ current_user.username }}</span></span>
+                        <a href="/logout"
+                            class="bg-red-50 text-red-600 px-5 py-2 rounded-xl font-bold hover:bg-red-100 transition-all">Logout</a>
+                        {% else %}
+                        <a href="/login"
+                            class="bg-purple-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-purple-700 transition-all shadow-md">Login</a>
+                        {% endif %}
+                    </div>
+                </nav>
+            </div>
+
+            <div class="p-8">
+
+                <div class="header">
+                    <h2>Community Forum</h2>
+                    <a href="/forum/create" class="btn-create">+ Ask Question</a>
+                </div>
+
+                <div id="categories" class="categories"></div>
+
+                <div id="posts" class="posts-list">
+                    <div class="loading">Loading posts...</div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Load categories
+            async function loadCategories() {
+                try {
+                    const response = await fetch('/api/forum/categories');
+                    const categories = await response.json();
+
+                    const container = document.getElementById('categories');
+                    container.innerHTML = categories.map(cat => `
+                    <div class="category-card" onclick="filterByCategory(${cat.id})">
+                        <div class="icon">${cat.icon}</div>
+                        <div class="name">${cat.name}</div>
+                        <div class="count">${cat.post_count} posts</div>
+                    </div>
+                `).join('');
+                } catch (error) {
+                    console.error('Error loading categories:', error);
+                }
+            }
+
+            // Load posts
+            async function loadPosts(categoryId = null) {
+                try {
+                    let url = '/api/forum/posts?sort=newest';
+                    if (categoryId) url += `&category_id=${categoryId}`;
+
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    const container = document.getElementById('posts');
+                    if (data.posts.length === 0) {
+                        container.innerHTML = '<div class="loading">No posts found. Be the first to post!</div>';
+                        return;
+                    }
+
+                    container.innerHTML = data.posts.map(post => `
+                    <div class="post-card" onclick="viewPost(${post.id})">
+                        <div class="post-header">
+                            <div class="post-author">
+                                <strong>${post.author.username}</strong>
+                                <span class="badge">${post.category.icon} ${post.category.name}</span>
+                            </div>
+                            <span>${new Date(post.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div class="post-title">${post.title}</div>
+                        <div class="post-excerpt">${post.content}</div>
+                        <div class="post-meta">
+                            <span>👍 ${post.vote_count} votes</span>
+                            <span>💬 ${post.comment_count} comments</span>
+                            <span>👁️ ${post.views} views</span>
+                            ${post.location ? `<span>📍 ${post.location}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                } catch (error) {
+                    console.error('Error loading posts:', error);
+                    document.getElementById('posts').innerHTML = '<div class="loading">Error loading posts</div>';
+                }
+            }
+
+            function filterByCategory(categoryId) {
+                loadPosts(categoryId);
+            }
+
+            function viewPost(postId) {
+                window.location.href = `/forum/post/${postId}`;
+            }
+
+            // Initialize
+            loadCategories();
+            loadPosts();
+        </script>
+</body>
+
+</html>

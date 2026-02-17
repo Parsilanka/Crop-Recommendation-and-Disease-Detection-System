@@ -56,6 +56,13 @@ Thumbs.db
 # Logs
 *.log
 
+# Databases
+*.db
+*.sqlite
+
+# Research Proposals
+Research_*.pdf
+
 # Temporary Debug Scripts
 reproduce_*.py
 debug_*.py
@@ -67,3 +74,5 @@ download_*.py
 inspect_model.py
 test_*.py
 try_*.py
+update_*.py
+repro_*.py

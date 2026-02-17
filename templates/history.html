@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis History - Crop Doctor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -17,7 +18,6 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f9f9f9;
             margin: 0;
             padding: 0;
             color: var(--dark);
@@ -111,53 +111,66 @@
     </style>
 </head>
 
-<body>
-    <header>
-        <div class="container header-content">
-            <h1>Analysis History</h1>
-            <a href="/" class="btn">Back to Home</a>
-        </div>
-    </header>
+<body class="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-purple-600">
+    <div class="p-6">
+        <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <header class="bg-white border-b border-gray-100 p-8 shadow-sm">
+                <div class="text-center mb-8">
+                    <h1 class="text-4xl font-black text-purple-600 inline-flex items-center gap-3">
+                        <span class="text-5xl">📜</span> Analysis History
+                    </h1>
+                </div>
 
-    <div class="container">
-        {% if entries %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Image</th>
-                    <th>Diagnosis</th>
-                    <th>Confidence</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for entry in entries %}
-                <tr>
-                    <td class="timestamp">{{ entry.date }}</td>
-                    <td><img src="/uploads/{{ entry.filename }}" alt="Crop" class="img-preview"></td>
-                    <td>{{ entry.prediction }}</td>
-                    <td>
-                        <span class="{{ 'confidence-high' if entry.confidence > 70 else 'confidence-low' }}">
-                            {{ entry.confidence }}%
-                        </span>
-                    </td>
-                    <td>
-                        <a href="/download_report/{{ entry.id }}" class="btn"
-                            style="font-size: 0.8em; padding: 5px 10px;">
-                            📄 Download PDF
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div style="text-align: center; padding: 50px;">
-            <h3>No history found yet.</h3>
-            <p>Go back and analyze some crops!</p>
+                <nav class="flex items-center justify-center gap-6 border-t border-gray-50 pt-6">
+                    <a href="/"
+                        class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-8 rounded-xl transition-all shadow-md">
+                        Back to Home
+                    </a>
+                </nav>
+            </header>
+
+            <div class="p-8">
+
+                {% if entries %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Image</th>
+                            <th>Diagnosis</th>
+                            <th>Confidence</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                        <tr>
+                            <td class="timestamp">{{ entry.date }}</td>
+                            <td><img src="/uploads/{{ entry.filename }}" alt="Crop" class="img-preview"></td>
+                            <td>{{ entry.prediction }}</td>
+                            <td>
+                                <span class="{{ 'confidence-high' if entry.confidence > 70 else 'confidence-low' }}">
+                                    {{ entry.confidence }}%
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/download_report/{{ entry.id }}" class="btn"
+                                    style="font-size: 0.8em; padding: 5px 10px;">
+                                    📄 Download PDF
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div style="text-align: center; padding: 50px;">
+                    <h3>No history found yet.</h3>
+                    <p>Go back and analyze some crops!</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
-        {% endif %}
     </div>
 </body>
 
