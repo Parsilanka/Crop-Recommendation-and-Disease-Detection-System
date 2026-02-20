@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from community_models import db, User
 import os
 from werkzeug.utils import secure_filename
 from PIL import Image
@@ -13,6 +15,22 @@ import weather
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///community.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize database
+db.init_app(app)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -962,7 +980,54 @@ def get_disease_info(disease_name):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration"""
+    if request.method == 'POST':
+        data = request.get_json() if request.is_json else request.form
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
+        full_name = data.get('full_name')
+        
+        if not username or not email or not password:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        if User.query.filter_by(username=username).first():
+            return jsonify({'error': 'Username already exists'}), 400
+        
+        user = User(username=username, email=email, full_name=full_name)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({'message': 'Registration successful'}), 201
+    return render_template('auth/register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """User login"""
+    if request.method == 'POST':
+        data = request.get_json() if request.is_json else request.form
+        username = data.get('username')
+        password = data.get('password')
+        remember = data.get('remember', False)
+        
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            login_user(user, remember=remember)
+            return jsonify({'message': 'Login successful', 'redirect': url_for('index')}), 200
+        return jsonify({'error': 'Invalid username or password'}), 401
+    return render_template('auth/login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    """User logout"""
+    logout_user()
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 

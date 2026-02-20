@@ -52,125 +52,67 @@ subheading_style = ParagraphStyle(
 elements.append(Paragraph("RESEARCH TITLE PROPOSAL", title_style))
 elements.append(Spacer(1, 12))
 
-# Main Title
-main_title = "An Intelligent Web-Based System for Precision Agriculture: Integrating Machine Learning for Crop Recommendation and Deep Learning for Plant Disease Detection with Real-Time Weather Analysis"
-elements.append(Paragraph(main_title, heading_style))
+# Main Title (Clear, Concise, 10-20 words)
+system_name = "Crop Doctor"
+main_title = f"{system_name}: Enhancing Agricultural Decision-Making Among Small-Scale Farmers through AI-Driven Analytics"
+elements.append(Paragraph("PROPOSED RESEARCH TITLE", heading_style))
+elements.append(Paragraph(f"<b>\"{main_title}\"</b>", title_style))
 elements.append(Spacer(1, 12))
 
-# Subtitle
-subtitle = "<i>A Comprehensive AI-Driven Platform for Sustainable Farming Through Data-Driven Crop Selection and Automated Disease Diagnosis</i>"
-elements.append(Paragraph(subtitle, styles['Center']))
-elements.append(Spacer(1, 20))
-
-# Section 1: Research Title Structure
-elements.append(Paragraph("1. RESEARCH TITLE STRUCTURE", heading_style))
-
-elements.append(Paragraph("<b>1.1 Subject Area:</b>", subheading_style))
-elements.append(Paragraph("Agricultural Technology, Precision Agriculture, Artificial Intelligence in Agriculture, Smart Farming Systems", styles['BodyText']))
-elements.append(Spacer(1, 8))
-
-elements.append(Paragraph("<b>1.2 Research Problem:</b>", subheading_style))
-elements.append(Paragraph("Farmers face challenges in making optimal crop selection decisions and identifying plant diseases early, leading to reduced yields and economic losses. Traditional methods are time-consuming, require expert knowledge, and lack integration with environmental factors.", styles['Justify']))
-elements.append(Spacer(1, 8))
-
-elements.append(Paragraph("<b>1.3 Methodology/Approach:</b>", subheading_style))
-elements.append(Paragraph("Machine Learning (Random Forest Classification), Deep Learning (Convolutional Neural Networks), Web Application Development (Flask Framework), Real-Time API Integration (Weather Data), Computer Vision (Image Processing)", styles['Justify']))
-elements.append(Spacer(1, 8))
-
-elements.append(Paragraph("<b>1.4 Scope/Population:</b>", subheading_style))
-elements.append(Paragraph("Small to medium-scale farmers, agricultural extension officers, and farming communities seeking data-driven decision support for crop management and disease control.", styles['Justify']))
-elements.append(Spacer(1, 8))
-
-elements.append(Paragraph("<b>1.5 Expected Outcome:</b>", subheading_style))
-elements.append(Paragraph("An accessible, intelligent system that provides accurate crop recommendations based on soil and climate parameters, identifies plant diseases with high precision, and offers actionable treatment recommendations, ultimately improving agricultural productivity and sustainability.", styles['Justify']))
-elements.append(Spacer(1, 16))
-
-# Section 2: Key Features
-elements.append(Paragraph("2. SYSTEM KEY FEATURES", heading_style))
-
-features = [
-    "Soil-Based Crop Recommendation: ML model analyzes NPK levels, pH, temperature, humidity, and rainfall",
-    "Disease Detection: Deep learning model (38 plant disease classes) with 95%+ accuracy",
-    "Real-Time Weather Integration: Location-based weather data for informed decision-making",
-    "Analysis History: Complete record of all disease diagnoses with timestamps",
-    "PDF Report Generation: Downloadable treatment and prevention reports",
-    "User-Friendly Interface: Responsive web design accessible on multiple devices",
-    "Fallback Mechanisms: Color-based analysis when ML model unavailable"
+# Section 1: Characteristics of the Title
+elements.append(Paragraph("1. CHARACTERISTICS OF THE TITLE", heading_style))
+characteristics = [
+    "<b>Conciseness:</b> 14 words (within the 10-20 word recommended range).",
+    "<b>Scope:</b> Focuses on decision-making enhancement in small-scale farming.",
+    "<b>Variables:</b> AI-Driven Analytics (Independent) and Decision-Making (Dependent).",
+    "<b>Clarity:</b> Avoids technical jargon to remain accessible to all stakeholders."
 ]
-
-for i, feature in enumerate(features, 1):
-    elements.append(Paragraph(f"{i}. {feature}", styles['BodyText']))
+for char in characteristics:
+    elements.append(Paragraph(f"• {char}", styles['BodyText']))
     elements.append(Spacer(1, 4))
-
 elements.append(Spacer(1, 12))
 
-# Section 3: Technical Specifications
-elements.append(Paragraph("3. TECHNICAL SPECIFICATIONS", heading_style))
+# Section 2: Research Methodology
+elements.append(Paragraph("2. RESEARCH METHODOLOGY", heading_style))
 
-elements.append(Paragraph("<b>3.1 Technologies Used:</b>", subheading_style))
-
-tech_stack = [
-    "Backend: Python 3.11, Flask Framework",
-    "Machine Learning: Scikit-learn (Random Forest)",
-    "Deep Learning: TensorFlow/Keras (CNN)",
-    "Image Processing: PIL, NumPy",
-    "Database: SQLite",
-    "APIs: Open-Meteo (Weather), BigDataCloud (Geolocation)",
-    "Report Generation: FPDF2",
-    "Frontend: HTML5, CSS3, JavaScript"
+methodology_data = [
+    ("Research Design", "A <b>Mixed-Method approach</b> combining quantitative system performance analytics with qualitative user experience interviews."),
+    ("Research Locale", "The study is conducted within <b>sub-regions of Kenya</b>, focusing on areas with active small-scale cereal and vegetable production."),
+    ("Population & Sampling", "<b>Small-scale farmers</b> (N=50) selected via <b>Purposive Sampling</b> based on smartphone literacy and active farming status."),
+    ("Research Instrument", "<b>Automated Data Logs</b> for system accuracy and <b>Semi-Structured Questionnaires</b> for user impact assessment."),
+    ("Data Collection", "A <b>three-phase process</b>: Pre-test baseline survey, 4-week system interaction period, and post-study performance review."),
+    ("Data Analysis", "<b>Statistical Regression</b> for accuracy correlation and <b>Thematic Analysis</b> for qualitative feedback interpretation."),
+    ("Ethical Considerations", "Strict adherence to <b>Informed Consent</b> protocols and <b>Confidentiality</b> of farmer location and yield data.")
 ]
 
-for tech in tech_stack:
-    elements.append(Paragraph(f"• {tech}", styles['BodyText']))
-
-elements.append(Spacer(1, 8))
-
-elements.append(Paragraph("<b>3.2 Dataset:</b>", subheading_style))
-elements.append(Paragraph("PlantVillage Dataset (38 disease classes), Crop Recommendation Dataset (22 crops with soil/climate parameters)", styles['BodyText']))
-elements.append(Spacer(1, 16))
-
-# Section 4: Research Significance
-elements.append(Paragraph("4. RESEARCH SIGNIFICANCE", heading_style))
-
-significance = [
-    "Addresses food security challenges through improved crop yields",
-    "Reduces economic losses from crop diseases through early detection",
-    "Democratizes agricultural expertise via accessible technology",
-    "Promotes sustainable farming practices through data-driven decisions",
-    "Contributes to digital agriculture transformation in developing regions",
-    "Provides scalable solution adaptable to various geographical contexts"
-]
-
-for i, sig in enumerate(significance, 1):
-    elements.append(Paragraph(f"{i}. {sig}", styles['BodyText']))
-    elements.append(Spacer(1, 4))
-
+for label, desc in methodology_data:
+    elements.append(Paragraph(f"<b>{label}:</b> {desc}", styles['Justify']))
+    elements.append(Spacer(1, 6))
 elements.append(Spacer(1, 12))
 
-# Section 5: Keywords
-elements.append(Paragraph("5. KEYWORDS", heading_style))
-keywords = "Precision Agriculture, Machine Learning, Deep Learning, Crop Recommendation, Plant Disease Detection, Computer Vision, Smart Farming, Agricultural Decision Support System, Convolutional Neural Networks, Web-Based Application, Sustainable Agriculture"
-elements.append(Paragraph(keywords, styles['Justify']))
-elements.append(Spacer(1, 16))
+# Section 3: Group Project Context
+elements.append(Paragraph("3. GROUP PROJECT & COLLABORATION", heading_style))
 
-# Section 6: Alternative Titles
-elements.append(Paragraph("6. ALTERNATIVE RESEARCH TITLES", heading_style))
-
-alt_titles = [
-    ("Alternative 1:", "Development of an AI-Powered Agricultural Advisory System for Crop Selection and Disease Management"),
-    ("Alternative 2:", "Machine Learning and Deep Learning Approaches to Intelligent Crop Recommendation and Plant Pathology Detection"),
-    ("Alternative 3:", "A Smart Farming Platform: Integrating Predictive Analytics for Crop Planning and Automated Disease Diagnosis"),
-    ("Alternative 4:", "Web-Based Decision Support System for Precision Agriculture Using Artificial Intelligence and Real-Time Environmental Data")
+group_data = [
+    ("Division of Tasks", "Backend/AI development, Frontend UX design, Database architecture, and Documentation/Research writing."),
+    ("Timeline", "<b>Total Duration: 12 Weeks</b> (Design: 3w, Implementation: 6w, Testing/Writing: 3w)."),
+    ("Group Roles", "Project Leader, Lead Developer, Data Scientist, UX Designer, and Technical Writer."),
+    ("Collaboration Tools", "<b>GitHub</b> for version control, <b>VSC</b> for development, and <b>Google Docs</b> for collaborative writing.")
 ]
 
-for label, title in alt_titles:
-    elements.append(Paragraph(f"<b>{label}</b>", styles['BodyText']))
-    elements.append(Paragraph(title, styles['Justify']))
-    elements.append(Spacer(1, 8))
+for label, desc in group_data:
+    elements.append(Paragraph(f"<b>{label}:</b> {desc}", styles['Justify']))
+    elements.append(Spacer(1, 6))
+elements.append(Spacer(1, 12))
+
+# Section 4: System Identity
+elements.append(Paragraph("4. SYSTEM OVERVIEW", heading_style))
+elements.append(Paragraph(f"<b>System Name:</b> {system_name}", styles['BodyText']))
+elements.append(Paragraph("<b>Core Capabilities:</b> Precision Crop Recommendation, Deep Learning Disease Isolation, and Expert Knowledge Exchange.", styles['BodyText']))
 
 # Footer
-elements.append(Spacer(1, 20))
-footer_text = f"<i>Document Generated: {datetime.datetime.now().strftime('%B %d, %Y')}<br/>Crop Recommendation and Disease Detection System</i>"
+elements.append(Spacer(1, 30))
+footer_text = f"<i>Document Generated: {datetime.datetime.now().strftime('%B %d, %Y')}<br/>Research Proposal: {system_name} System</i>"
 elements.append(Paragraph(footer_text, styles['Center']))
 
 # Build PDF
