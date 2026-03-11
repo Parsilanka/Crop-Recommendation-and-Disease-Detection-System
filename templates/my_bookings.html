@@ -124,9 +124,11 @@
                     return;
                 }
 
-                // Check if user is the expert for this booking to show action buttons
-                const isExpert = b.expert.name === '{{ current_user.full_name }}' || b.expert.name === '{{ current_user.username }}' || document.body.innerHTML.includes('Dr_');
-                // Note: The UI currently doesn't easily expose current_user.is_expert cleanly to frontend without template injection.
+                // Identify if current user is the Expert or the Farmer
+                // Current farmer sees "Welcome, [username]" in nav. 
+                // We'll rely on checking if current user matches farmer.name
+                const isFarmer = '{{ current_user.full_name }}' === b.farmer.name || '{{ current_user.username }}' === b.farmer.name;
+                const isExpert = !isFarmer;
 
                 const modalHtml = `
                 <div id="booking-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm transition-opacity">
@@ -143,8 +145,8 @@
                         <div class="p-6 space-y-4">
                             <div class="flex justify-between items-start">
                                 <div>
-                                    <p class="text-sm text-gray-500 font-bold mb-1">Farmer</p>
-                                    <p class="text-lg font-bold text-gray-900">${b.farmer.name}</p>
+                                    <p class="text-sm text-gray-500 font-bold mb-1">${isExpert ? 'Farmer' : 'Expert'}</p>
+                                    <p class="text-lg font-bold text-gray-900">${isExpert ? b.farmer.name : 'Dr. ' + (b.expert.name || '')}</p>
                                 </div>
                                 <div class="text-right">
                                     <span class="px-3 py-1 rounded-full text-xs font-extra-bold uppercase tracking-wider 
@@ -166,7 +168,11 @@
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <span class="text-xl">💰</span>
-                                    <p class="text-sm font-bold text-gray-800">KSh ${b.payment_amount} <span class="text-xs text-gray-500 font-normal">(${b.payment_status || 'Pending'})</span></p>
+                                    <p class="text-sm font-bold text-gray-800">KSh ${b.payment_amount} 
+                                        <span class="text-xs ${b.payment_status === 'paid' ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'} px-2 py-0.5 rounded-md font-bold uppercase ml-2 shadow-sm">
+                                            ${b.payment_status || 'Pending'}
+                                        </span>
+                                    </p>
                                 </div>
                             </div>
                             
@@ -194,23 +200,42 @@
 
                         </div>
 
-                        <div class="p-6 border-t border-gray-100 bg-gray-50 flex gap-3 justify-end items-center">
-                            ${b.status === 'pending' ? `
-                                <button onclick="updateBookingStatus(${b.id}, 'confirmed')" class="px-5 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-sm">
-                                    Accept Booking
-                                </button>
-                                <button onclick="updateBookingStatus(${b.id}, 'cancelled')" class="px-5 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-all">
-                                    Decline
-                                </button>
+                        <div class="p-6 border-t border-gray-100 bg-gray-50 flex gap-3 justify-end items-center flex-wrap">
+                            
+                            <!-- EXPERT ACTIONS -->
+                            ${isExpert ? `
+                                ${b.status === 'pending' ? `
+                                    <button onclick="updateBookingStatus(${b.id}, 'confirmed')" class="px-5 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-sm">
+                                        Accept Booking
+                                    </button>
+                                    <button onclick="updateBookingStatus(${b.id}, 'cancelled')" class="px-5 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-all">
+                                        Decline
+                                    </button>
+                                ` : ''}
+                                ${b.status === 'confirmed' ? `
+                                    <button onclick="updateBookingStatus(${b.id}, 'completed')" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-sm">
+                                        Mark Completed
+                                    </button>
+                                    <a href="https://meet.google.com/new" target="_blank" class="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-all shadow-sm">
+                                        Join Video Call
+                                    </a>
+                                ` : ''}
                             ` : ''}
-                            ${b.status === 'confirmed' ? `
-                                <button onclick="updateBookingStatus(${b.id}, 'completed')" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-sm">
-                                    Mark Completed
-                                </button>
-                                <a href="https://meet.google.com/new" target="_blank" class="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-all shadow-sm">
-                                    Join Call
-                                </a>
+
+                            <!-- FARMER ACTIONS -->
+                            ${isFarmer ? `
+                                ${b.payment_status !== 'paid' && b.status !== 'cancelled' ? `
+                                    <button id="pay-btn-${b.id}" onclick="processPayment(${b.id})" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-xl animate-pulse">
+                                        💳 Pay KSh ${b.payment_amount} Now
+                                    </button>
+                                ` : ''}
+                                ${b.status === 'confirmed' && b.payment_status === 'paid' ? `
+                                    <a href="https://meet.google.com/new" target="_blank" class="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-all shadow-sm">
+                                        Join Video Call
+                                    </a>
+                                ` : ''}
                             ` : ''}
+                            
                             <button onclick="document.getElementById('booking-modal').remove()" class="px-5 py-2 border border-gray-200 hover:bg-white text-gray-600 font-bold rounded-xl transition-all">
                                 Close
                             </button>
@@ -223,6 +248,41 @@
             } catch (error) {
                 console.error('Error fetching details:', error);
                 alert("Could not load consultation details.");
+            }
+        }
+
+        async function processPayment(id) {
+            const btn = document.getElementById(`pay-btn-${id}`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⚙️ Processing...';
+            btn.disabled = true;
+
+            try {
+                // First simulate a 1.5s delay like real gateways (Stripe/Mpesa)
+                await new Promise(r => setTimeout(r, 1500));
+
+                const response = await fetch(`/api/experts/bookings/${id}/pay`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    // Success! Remove the modal immediately and refresh list to show newly paid status
+                    document.getElementById('booking-modal').remove();
+                    // Optional nice flair
+                    alert("✅ Payment Successful! Your consultation is secured.");
+                    loadBookings();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Payment failed.');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Connection error during payment');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 

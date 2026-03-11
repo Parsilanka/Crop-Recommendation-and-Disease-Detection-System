@@ -440,6 +440,30 @@ def update_booking_status(booking_id):
     return jsonify({'message': 'Booking status updated'})
 
 
+@expert_bp.route('/bookings/<int:booking_id>/pay', methods=['POST'])
+@login_required
+def process_payment(booking_id):
+    """Simulate processing a payment for a booking (farmer only)"""
+    booking = ConsultationBooking.query.get_or_404(booking_id)
+    
+    # Check authorization (only the farmer who made the booking can pay)
+    if booking.farmer_id != current_user.id:
+        return jsonify({'error': 'Unauthorized to pay for this booking'}), 403
+    
+    if booking.payment_status == 'paid':
+        return jsonify({'error': 'Booking is already paid'}), 400
+    
+    # In a real app, integrate Stripe, PayPal, M-Pesa, etc. here.
+    # For now, we instantly simulate successful payment.
+    booking.payment_status = 'paid'
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Payment successful',
+        'payment_status': booking.payment_status
+    }), 200
+
+
 @expert_bp.route('/bookings/<int:booking_id>/review', methods=['POST'])
 @login_required
 def add_review(booking_id):
