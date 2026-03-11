@@ -114,8 +114,137 @@
             }
         }
 
-        function viewBooking(id) {
-            alert('Consultation details and session link will be available here when confirmed.');
+        async function viewBooking(id) {
+            try {
+                const response = await fetch(`/api/experts/bookings/${id}`);
+                const b = await response.json();
+
+                if (b.error) {
+                    alert(b.error);
+                    return;
+                }
+
+                // Check if user is the expert for this booking to show action buttons
+                const isExpert = b.expert.name === '{{ current_user.full_name }}' || b.expert.name === '{{ current_user.username }}' || document.body.innerHTML.includes('Dr_');
+                // Note: The UI currently doesn't easily expose current_user.is_expert cleanly to frontend without template injection.
+
+                const modalHtml = `
+                <div id="booking-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm transition-opacity">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+                        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <h2 class="text-xl font-black text-gray-800 flex items-center gap-2">
+                                📋 Consultation Details
+                            </h2>
+                            <button onclick="document.getElementById('booking-modal').remove()" class="text-gray-400 hover:text-red-500 transition-colors">
+                                <span class="text-2xl">&times;</span>
+                            </button>
+                        </div>
+                        
+                        <div class="p-6 space-y-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm text-gray-500 font-bold mb-1">Farmer</p>
+                                    <p class="text-lg font-bold text-gray-900">${b.farmer.name}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="px-3 py-1 rounded-full text-xs font-extra-bold uppercase tracking-wider 
+                                        ${b.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                        b.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}">
+                                        ${b.status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-purple-50 rounded-xl space-y-2 border border-purple-100">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">🕒</span>
+                                    <p class="text-sm font-bold text-gray-800">${b.booking_date} | ${b.start_time} - ${b.end_time}</p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">💻</span>
+                                    <p class="text-sm font-bold text-gray-800 capitalize">${b.mode} Session</p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">💰</span>
+                                    <p class="text-sm font-bold text-gray-800">KSh ${b.payment_amount} <span class="text-xs text-gray-500 font-normal">(${b.payment_status || 'Pending'})</span></p>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <p class="text-sm text-gray-500 font-bold mb-1">Crop & Urgency</p>
+                                <p class="text-gray-800 font-medium">${b.crop_type || 'Not specified'} 
+                                    <span class="text-xs ml-2 px-2 py-0.5 rounded-full ${b.urgency === 'high' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${b.urgency || 'medium'}</span>
+                                </p>
+                            </div>
+
+                            <div>
+                                <p class="text-sm text-gray-500 font-bold mb-1">Issue Description</p>
+                                <p class="text-gray-800 text-sm bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                    ${b.issue_description || 'No specific details provided by the farmer.'}
+                                </p>
+                            </div>
+                            
+                            ${b.expert_notes ? `
+                            <div>
+                                <p class="text-sm text-purple-600 font-bold mb-1">Expert Notes</p>
+                                <p class="text-gray-800 text-sm bg-purple-50 p-3 rounded-xl border border-purple-100">
+                                    ${b.expert_notes}
+                                </p>
+                            </div>` : ''}
+
+                        </div>
+
+                        <div class="p-6 border-t border-gray-100 bg-gray-50 flex gap-3 justify-end items-center">
+                            ${b.status === 'pending' ? `
+                                <button onclick="updateBookingStatus(${b.id}, 'confirmed')" class="px-5 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-sm">
+                                    Accept Booking
+                                </button>
+                                <button onclick="updateBookingStatus(${b.id}, 'cancelled')" class="px-5 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-all">
+                                    Decline
+                                </button>
+                            ` : ''}
+                            ${b.status === 'confirmed' ? `
+                                <button onclick="updateBookingStatus(${b.id}, 'completed')" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-sm">
+                                    Mark Completed
+                                </button>
+                                <a href="https://meet.google.com/new" target="_blank" class="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-all shadow-sm">
+                                    Join Call
+                                </a>
+                            ` : ''}
+                            <button onclick="document.getElementById('booking-modal').remove()" class="px-5 py-2 border border-gray-200 hover:bg-white text-gray-600 font-bold rounded-xl transition-all">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            } catch (error) {
+                console.error('Error fetching details:', error);
+                alert("Could not load consultation details.");
+            }
+        }
+
+        async function updateBookingStatus(id, newStatus) {
+            try {
+                const response = await fetch(`/api/experts/bookings/${id}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    document.getElementById('booking-modal').remove();
+                    loadBookings(); // Refresh the list
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to update status');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Connection error');
+            }
         }
 
         loadBookings();
